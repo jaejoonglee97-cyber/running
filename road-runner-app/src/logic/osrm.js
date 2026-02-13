@@ -91,6 +91,54 @@ export class OsrmNode {
     }
 
     /**
+     * Get one-way route: Start -> End (no return)
+     * @param {Object} start - { lat, lng }
+     * @param {Object} end - { lat, lng }
+     * @return {Array} Array of [lat, lng] for Leaflet Polyline
+     */
+    async getOneWayRoute(start, end) {
+        const coordinates = `${start.lng},${start.lat};${end.lng},${end.lat}`;
+
+        const primaryUrl = `${this.baseUrl}/route/v1/foot/${coordinates}?overview=full&geometries=geojson&exclude=motorway,trunk&radiuses=1000;1000`;
+        const fallbackUrl = `${this.baseUrl}/route/v1/foot/${coordinates}?overview=full&geometries=geojson`;
+
+        const fetchRoute = async (url, timeoutMs) => {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const response = await fetch(url, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error(`Status ${response.status}`);
+                return await response.json();
+            } catch (e) {
+                clearTimeout(timeoutId);
+                throw e;
+            }
+        };
+
+        try {
+            console.log("Attempting primary one-way route...");
+            const data = await fetchRoute(primaryUrl, 15000);
+            if (data.routes && data.routes.length > 0) {
+                return data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+            }
+            throw new Error("No routes found in primary");
+        } catch (error) {
+            console.warn("Primary one-way route failed, attempting fallback...", error);
+            try {
+                const data = await fetchRoute(fallbackUrl, 15000);
+                if (data.routes && data.routes.length > 0) {
+                    return data.routes[0].geometry.coordinates.map(coord => [coord[1], coord[0]]);
+                }
+                return [];
+            } catch (fallbackError) {
+                console.error("All one-way route strategies failed:", fallbackError);
+                throw fallbackError;
+            }
+        }
+    }
+
+    /**
      * Get nearest point on the road network
      */
     async getNearest(lat, lng, profile = 'foot') {

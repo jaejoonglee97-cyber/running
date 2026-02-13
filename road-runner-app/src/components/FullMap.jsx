@@ -1,9 +1,42 @@
 import React, { useEffect, useState } from 'react';
-// Note: You need to install 'leaflet' and 'react-leaflet' 
-// npm install leaflet react-leaflet
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-// import '../assets/marker_placeholder.png'; // Commented out to prevent build error until file exists
+
+// Fix Leaflet default marker icon issue
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
+// Custom neon markers
+const startIcon = new L.DivIcon({
+    className: '',
+    html: `<div style="
+        width: 20px; height: 20px;
+        background: #00f3ff;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 0 12px rgba(0,243,255,0.8), 0 0 24px rgba(0,243,255,0.4);
+    "></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+});
+
+const endIcon = new L.DivIcon({
+    className: '',
+    html: `<div style="
+        width: 20px; height: 20px;
+        background: #ff9e00;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 0 12px rgba(255,158,0,0.8), 0 0 24px rgba(255,158,0,0.4);
+    "></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10],
+});
 
 // Component to track map center movements
 const MapCenterTracker = ({ onCenterChange, isTracking }) => {
@@ -13,7 +46,6 @@ const MapCenterTracker = ({ onCenterChange, isTracking }) => {
                 onCenterChange(map.getCenter());
             }
         },
-        // Also fire on load/move to init
         load: () => {
             if (isTracking && onCenterChange) onCenterChange(map.getCenter());
         }
@@ -21,16 +53,13 @@ const MapCenterTracker = ({ onCenterChange, isTracking }) => {
     return null;
 };
 
-const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMode, onModeChange, onCenterChange }) => {
-    const [mapCenter, setMapCenter] = useState([37.5665, 126.9780]); // Default: Seoul City Hall
+const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMode, onCenterChange, runMode }) => {
+    const [mapCenter, setMapCenter] = useState([37.5665, 126.9780]); // Default: Seoul
     const [isMapTilesLoaded, setIsMapTilesLoaded] = useState(false);
 
-    // VWorld API Key Configuration
     const VWORLD_API_KEY = "C472C587-78DE-3BB8-8939-F86C181BE19A";
 
     useEffect(() => {
-        // Only update map center from props if we strictly need to force it (e.g. GPS found)
-        // In custom mode, we let the user drag.
         if (startPoint && !isCustomMode) {
             setMapCenter([startPoint.lat, startPoint.lng]);
         }
@@ -55,19 +84,19 @@ const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMo
                     }}
                 />
 
-                {/* Tracker for Custom Mode */}
                 <MapCenterTracker isTracking={isCustomMode} onCenterChange={onCenterChange} />
 
-                {/* Markers */}
+                {/* Start Marker */}
                 {startPoint && !isCustomMode && (
-                    <Marker position={[startPoint.lat, startPoint.lng]}>
-                        <Popup>My Location</Popup>
+                    <Marker position={[startPoint.lat, startPoint.lng]} icon={startIcon}>
+                        <Popup>출발지</Popup>
                     </Marker>
                 )}
 
+                {/* End/Turnaround Marker */}
                 {turnaroundPoint && (
-                    <Marker position={[turnaroundPoint.lat, turnaroundPoint.lng]}>
-                        <Popup>Turnaround Point</Popup>
+                    <Marker position={[turnaroundPoint.lat, turnaroundPoint.lng]} icon={endIcon}>
+                        <Popup>{runMode === 'oneWay' ? '도착지' : '반환점'}</Popup>
                     </Marker>
                 )}
 
@@ -77,7 +106,12 @@ const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMo
                         {/* Outer Glow */}
                         <Polyline
                             positions={routePath}
-                            pathOptions={{ color: '#00f3ff', weight: 12, opacity: 0.4, lineCap: 'round' }}
+                            pathOptions={{
+                                color: runMode === 'oneWay' ? '#ff9e00' : '#00f3ff',
+                                weight: 12,
+                                opacity: 0.4,
+                                lineCap: 'round'
+                            }}
                         />
                         {/* Inner Core */}
                         <Polyline
@@ -87,50 +121,6 @@ const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMo
                     </>
                 )}
             </MapContainer>
-
-            {/* Top Floating Header (Mode Switch) */}
-            <div className="glass-panel" style={{
-                position: 'absolute',
-                top: '50px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                zIndex: 1500,
-                borderRadius: '30px',
-                padding: '5px',
-                display: 'flex',
-                gap: '5px'
-            }}>
-                <button
-                    onClick={() => onModeChange('current')}
-                    style={{
-                        background: !isCustomMode ? 'rgba(255,255,255,0.2)' : 'transparent',
-                        border: 'none',
-                        color: 'white',
-                        padding: '10px 20px',
-                        borderRadius: '25px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        transition: '0.3s'
-                    }}
-                >
-                    📍 현 위치
-                </button>
-                <button
-                    onClick={() => onModeChange('custom')}
-                    style={{
-                        background: isCustomMode ? 'rgba(255,255,255,0.2)' : 'transparent',
-                        border: 'none',
-                        color: 'white',
-                        padding: '10px 20px',
-                        borderRadius: '25px',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        transition: '0.3s'
-                    }}
-                >
-                    🔍 직접 설정
-                </button>
-            </div>
 
             {/* Center Crosshair for Custom Mode */}
             {isCustomMode && (
@@ -142,15 +132,40 @@ const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMo
                     zIndex: 1400,
                     pointerEvents: 'none'
                 }}>
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="16" />
-                        <line x1="8" y1="12" x2="16" y2="12" />
-                    </svg>
+                    <div style={{
+                        width: '48px',
+                        height: '48px',
+                        borderRadius: '50%',
+                        border: '3px solid #00f3ff',
+                        boxShadow: '0 0 20px rgba(0,243,255,0.5), inset 0 0 20px rgba(0,243,255,0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'rgba(0,243,255,0.08)'
+                    }}>
+                        <div style={{
+                            width: '8px',
+                            height: '8px',
+                            borderRadius: '50%',
+                            background: '#00f3ff',
+                            boxShadow: '0 0 10px rgba(0,243,255,0.8)'
+                        }} />
+                    </div>
+                    <div style={{
+                        textAlign: 'center',
+                        marginTop: '8px',
+                        fontSize: '0.7rem',
+                        color: 'rgba(0,243,255,0.8)',
+                        fontWeight: '600',
+                        letterSpacing: '1px',
+                        textShadow: '0 0 10px rgba(0,243,255,0.5)'
+                    }}>
+                        출발지 설정
+                    </div>
                 </div>
             )}
 
-            {/* Map Auth / Loading Status Overlay */}
+            {/* Map Loading Overlay */}
             {!isMapTilesLoaded && (
                 <div className="glass-panel" style={{
                     position: 'absolute',
@@ -181,26 +196,26 @@ const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMo
                     justifyContent: 'center',
                     alignItems: 'center',
                     flexDirection: 'column',
-                    color: '#00f3ff',
+                    color: runMode === 'oneWay' ? '#ff9e00' : '#00f3ff',
                     backdropFilter: 'blur(5px)'
                 }}>
-                    <div className="spinner" style={{
+                    <div style={{
                         width: '50px',
                         height: '50px',
-                        border: '5px solid rgba(0,243,255,0.3)',
-                        borderTopColor: '#00f3ff',
+                        border: `5px solid ${runMode === 'oneWay' ? 'rgba(255,158,0,0.3)' : 'rgba(0,243,255,0.3)'}`,
+                        borderTopColor: runMode === 'oneWay' ? '#ff9e00' : '#00f3ff',
                         borderRadius: '50%',
                         animation: 'spin 1s linear infinite',
                         marginBottom: '20px'
                     }}></div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>COURSING...</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
+                        {runMode === 'oneWay' ? '편도 경로 생성 중...' : '왕복 경로 생성 중...'}
+                    </div>
                 </div>
             )}
 
             <style>
-                {`
-                    @keyframes spin { to { transform: rotate(360deg); } }
-                `}
+                {`@keyframes spin { to { transform: rotate(360deg); } }`}
             </style>
         </div>
     );

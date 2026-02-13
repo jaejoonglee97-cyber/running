@@ -1,14 +1,23 @@
 import React, { useState } from 'react';
 
-const ControlPanel = ({ onStart, isLoading, isReady, startMode }) => {
-    const [distanceKm, setDistanceKm] = useState(5.0); // Default 5km
+const ControlPanel = ({ onStart, isLoading, isReady, startMode, runMode = 'roundTrip' }) => {
+    const [distanceKm, setDistanceKm] = useState(5.0);
 
     const adjustDistance = (delta) => {
         setDistanceKm(prev => {
             const newVal = prev + delta;
-            return Math.max(3, Math.min(21, Math.round(newVal * 10) / 10)); // Clamp 3-21, keep 1 decimal
+            return Math.max(1, Math.min(42, Math.round(newVal * 10) / 10));
         });
     };
+
+    const isOneWay = runMode === 'oneWay';
+    const accentColor = isOneWay ? '#ff9e00' : '#00f3ff';
+    const gradientBg = isOneWay
+        ? 'linear-gradient(135deg, #ff9e00 0%, #ff6600 100%)'
+        : 'linear-gradient(135deg, #00C6FF 0%, #0072FF 100%)';
+    const shadowColor = isOneWay
+        ? 'rgba(255,158,0,0.6)'
+        : 'rgba(0,114,255,0.6)';
 
     return (
         <div className="glass-panel" style={{
@@ -23,7 +32,14 @@ const ControlPanel = ({ onStart, isLoading, isReady, startMode }) => {
         }}>
             {/* Distance Control */}
             <div style={{ marginBottom: '25px', textAlign: 'center' }}>
-                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '10px', letterSpacing: '1px' }}>TARGET DISTANCE</div>
+                <div style={{
+                    fontSize: '0.9rem',
+                    color: 'var(--text-secondary)',
+                    marginBottom: '10px',
+                    letterSpacing: '1px'
+                }}>
+                    {isOneWay ? '편도 거리' : '왕복 거리'}
+                </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
                     <button
@@ -43,7 +59,15 @@ const ControlPanel = ({ onStart, isLoading, isReady, startMode }) => {
                         -
                     </button>
 
-                    <div style={{ fontSize: '3.5rem', fontWeight: '800', fontFamily: 'sans-serif', minWidth: '140px', textAlign: 'center' }} className="neon-text-blue">
+                    <div style={{
+                        fontSize: '3.5rem',
+                        fontWeight: '800',
+                        fontFamily: 'sans-serif',
+                        minWidth: '140px',
+                        textAlign: 'center',
+                        color: accentColor,
+                        textShadow: `0 0 10px ${accentColor}50`
+                    }}>
                         {distanceKm.toFixed(1)} <span style={{ fontSize: '1rem', color: '#888', fontWeight: 'normal' }}>KM</span>
                     </div>
 
@@ -66,7 +90,7 @@ const ControlPanel = ({ onStart, isLoading, isReady, startMode }) => {
                 </div>
             </div>
 
-            {/* Action Buttons Container */}
+            {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '10px' }}>
                 {/* Share Button */}
                 <button
@@ -74,13 +98,13 @@ const ControlPanel = ({ onStart, isLoading, isReady, startMode }) => {
                         if (navigator.share) {
                             navigator.share({
                                 title: '나랑 한강 뛸래? 오늘 추천 코스야!',
-                                text: `이재중이 추천하는 오늘 ${distanceKm}km 러닝 코스를 확인해봐! 🏃`,
+                                text: `오늘 ${distanceKm}km ${isOneWay ? '편도' : '왕복'} 러닝 코스를 확인해봐! 🏃`,
                                 url: window.location.href,
                             })
-                                .then(() => console.log('Successful share'))
-                                .catch((error) => console.log('Error sharing', error));
+                                .then(() => console.log('Shared'))
+                                .catch((error) => console.log('Share error', error));
                         } else {
-                            alert("공유하기를 지원하지 않는 브라우저입니다. URL을 복사해주세요: " + window.location.href);
+                            alert("공유하기를 지원하지 않는 브라우저입니다.");
                         }
                     }}
                     disabled={isLoading}
@@ -105,7 +129,6 @@ const ControlPanel = ({ onStart, isLoading, isReady, startMode }) => {
 
                 {/* Start Button */}
                 <button
-                    className="neon-button"
                     onClick={() => onStart && !isLoading && isReady && onStart(distanceKm * 1000)}
                     disabled={isLoading || !isReady}
                     style={{
@@ -119,10 +142,16 @@ const ControlPanel = ({ onStart, isLoading, isReady, startMode }) => {
                         letterSpacing: '2px',
                         cursor: (isLoading || !isReady) ? 'not-allowed' : 'pointer',
                         opacity: (isLoading || !isReady) ? 0.7 : 1,
+                        background: gradientBg,
+                        boxShadow: `0 0 20px ${shadowColor}`,
                         transition: 'all 0.3s'
                     }}
                 >
-                    {isLoading ? 'CALCULATING...' : (!isReady && startMode === 'current' ? 'WAITING FOR GPS...' : 'START RUN')}
+                    {isLoading
+                        ? '경로 생성 중...'
+                        : (!isReady && startMode === 'current')
+                            ? 'GPS 대기 중...'
+                            : isOneWay ? '편도 코스 생성' : '왕복 코스 생성'}
                 </button>
             </div>
         </div>
