@@ -167,6 +167,43 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
                 </span>
             </div>
 
+            {/* GPS / Map Select Toggle */}
+            <button
+                onClick={() => handleModeChange(startMode === 'current' ? 'custom' : 'current')}
+                style={{
+                    position: 'absolute',
+                    top: '50px',
+                    right: '16px',
+                    zIndex: 1600,
+                    height: '44px',
+                    borderRadius: '14px',
+                    background: startMode === 'current'
+                        ? 'rgba(0,243,255,0.2)'
+                        : 'rgba(20,20,20,0.7)',
+                    backdropFilter: 'blur(12px)',
+                    color: 'white',
+                    fontSize: '0.8rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '0 14px',
+                    boxShadow: startMode === 'current'
+                        ? '0 0 15px rgba(0,243,255,0.3)'
+                        : '0 2px 10px rgba(0,0,0,0.3)',
+                    border: startMode === 'current'
+                        ? '1px solid rgba(0,243,255,0.4)'
+                        : '1px solid rgba(255,255,255,0.1)',
+                    transition: 'all 0.3s ease'
+                }}
+            >
+                <span style={{ fontSize: '1.1rem' }}>
+                    {startMode === 'current' ? '📍' : '🔍'}
+                </span>
+                {startMode === 'current' ? '현위치' : '직접설정'}
+            </button>
+
             {/* Course Description Card */}
             {courseDescription && (
                 <div
