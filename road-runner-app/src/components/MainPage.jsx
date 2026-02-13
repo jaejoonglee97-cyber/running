@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import FullMap from './FullMap';
 import ControlPanel from './DistanceBottomSheet';
 import { CourseManager } from '../logic/courseManager';
+import { generateCourseDescription } from '../logic/courseDescription';
 
 const MainPage = ({ runMode = 'roundTrip', onBack }) => {
     const [courseData, setCourseData] = useState({
@@ -10,6 +11,8 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
         routePath: []
     });
     const [isLoading, setIsLoading] = useState(false);
+    const [courseDescription, setCourseDescription] = useState(null);
+    const [lastDistance, setLastDistance] = useState(0);
 
     // Default to 'custom' (Map Selection)
     const [startMode, setStartMode] = useState('custom'); // 'current' | 'custom'
@@ -47,6 +50,7 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
 
     const handleCreateCourse = async (targetDistance) => {
         setIsLoading(true);
+        setCourseDescription(null);
 
         try {
             let start;
@@ -67,18 +71,34 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
 
             let result;
             if (runMode === 'oneWay') {
-                // One-way mode
                 result = await courseManager.generateOneWayCourse(start, targetDistance);
             } else {
-                // Round trip mode (default)
                 result = await courseManager.generateCourseFromPoint(start, targetDistance);
             }
 
+            const endPoint = result.turnaroundPoint || result.endPoint;
+
             setCourseData({
                 startPoint: result.startPoint,
-                turnaroundPoint: result.turnaroundPoint || result.endPoint,
+                turnaroundPoint: endPoint,
                 routePath: result.routePath
             });
+
+            setLastDistance(targetDistance);
+
+            // Generate course description (async, non-blocking)
+            generateCourseDescription({
+                startPoint: result.startPoint,
+                endPoint: endPoint,
+                routePath: result.routePath,
+                runMode: runMode,
+                distanceMeters: targetDistance
+            }).then(desc => {
+                setCourseDescription(desc);
+            }).catch(err => {
+                console.warn("Course description generation failed:", err);
+            });
+
         } catch (error) {
             console.error("Failed to generate course:", error);
             alert("경로 생성에 실패했습니다.\n\n가능한 원인:\n1. OSRM 서버 응답 지연 (잠시 후 다시 시도)\n2. 시작점 주변에 인식 가능한 도로 없음\n3. 네트워크 연결 불안정");
@@ -147,6 +167,61 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
                 </span>
             </div>
 
+            {/* Course Description Card */}
+            {courseDescription && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        top: '100px',
+                        left: '16px',
+                        right: '16px',
+                        zIndex: 1500,
+                        borderRadius: '16px',
+                        padding: '16px 20px',
+                        background: 'rgba(18,18,18,0.85)',
+                        backdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                        animation: 'slideDown 0.4s ease-out'
+                    }}
+                >
+                    <div style={{
+                        fontSize: '1.05rem',
+                        fontWeight: '800',
+                        color: '#fff',
+                        marginBottom: '6px',
+                        lineHeight: '1.4'
+                    }}>
+                        {courseDescription.title}
+                    </div>
+                    <div style={{
+                        fontSize: '0.8rem',
+                        color: 'rgba(255,255,255,0.55)',
+                        marginBottom: '10px',
+                        lineHeight: '1.4'
+                    }}>
+                        {courseDescription.subtitle}
+                    </div>
+                    <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {courseDescription.tags.map((tag, i) => (
+                            <span key={i} style={{
+                                fontSize: '0.7rem',
+                                fontWeight: '600',
+                                padding: '4px 10px',
+                                borderRadius: '10px',
+                                background: runMode === 'oneWay'
+                                    ? 'rgba(255,158,0,0.15)'
+                                    : 'rgba(0,243,255,0.15)',
+                                color: runMode === 'oneWay' ? '#ff9e00' : '#00f3ff',
+                                letterSpacing: '0.5px'
+                            }}>
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Map Component */}
             <FullMap
                 startPoint={courseData.startPoint}
@@ -167,6 +242,15 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
                 startMode={startMode}
                 runMode={runMode}
             />
+
+            <style>
+                {`
+                    @keyframes slideDown {
+                        from { opacity: 0; transform: translateY(-15px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `}
+            </style>
         </div>
     );
 };

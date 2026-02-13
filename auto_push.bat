@@ -13,7 +13,7 @@ git add .
 git commit -m "Auto-update: %date% %time%"
 
 :: Push to master branch
-git push origin master
+git push origin main
 
 echo ----------------------------------------
 echo Done!
