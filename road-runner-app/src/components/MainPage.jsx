@@ -102,7 +102,6 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
                     width: '44px',
                     height: '44px',
                     borderRadius: '14px',
-                    border: 'none',
                     background: 'rgba(20,20,20,0.7)',
                     backdropFilter: 'blur(12px)',
                     color: 'white',
