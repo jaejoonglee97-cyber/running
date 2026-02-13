@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
 
+const GUIDE_STEPS = [
+    { icon: '🏃', title: '모드 선택', desc: '왕복 또는 편도 코스를 선택하세요' },
+    { icon: '📍', title: '출발지 설정', desc: '현위치 또는 지도에서 직접 출발지를 정하세요' },
+    { icon: '📏', title: '거리 설정', desc: '+/- 버튼으로 원하는 거리를 조절하세요' },
+    { icon: '🚀', title: '코스 생성', desc: '버튼을 누르면 AI가 최적 경로를 추천합니다' },
+    { icon: '📤', title: '공유', desc: '마음에 드는 코스를 친구에게 공유하세요' },
+];
+
 const StartPage = ({ onStart }) => {
     const [selectedMode, setSelectedMode] = useState(null);
+    const [showGuide, setShowGuide] = useState(false);
 
     const handleGo = () => {
         if (selectedMode) {
@@ -40,6 +49,33 @@ const StartPage = ({ onStart }) => {
                 background: 'radial-gradient(circle, rgba(0,114,255,0.08) 0%, transparent 70%)',
                 pointerEvents: 'none'
             }} />
+
+            {/* Guide Button (Top Right) */}
+            <button
+                onClick={() => setShowGuide(true)}
+                style={{
+                    position: 'absolute',
+                    top: '50px',
+                    right: '20px',
+                    zIndex: 10,
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    background: 'rgba(255,255,255,0.08)',
+                    backdropFilter: 'blur(8px)',
+                    color: 'rgba(255,255,255,0.6)',
+                    fontSize: '1.1rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.3s'
+                }}
+            >
+                ?
+            </button>
 
             {/* App Title */}
             <div style={{ textAlign: 'center', marginBottom: '60px', zIndex: 1 }}>
@@ -130,7 +166,6 @@ const StartPage = ({ onStart }) => {
                             </div>
                         </div>
                     </div>
-                    {/* Selection indicator */}
                     {selectedMode === 'roundTrip' && (
                         <div style={{
                             position: 'absolute',
@@ -206,7 +241,6 @@ const StartPage = ({ onStart }) => {
                             </div>
                         </div>
                     </div>
-                    {/* Selection indicator */}
                     {selectedMode === 'oneWay' && (
                         <div style={{
                             position: 'absolute',
@@ -272,6 +306,176 @@ const StartPage = ({ onStart }) => {
             }}>
                 ROAD RUNNER v1.0
             </div>
+
+            {/* ==================== GUIDE MODAL ==================== */}
+            {showGuide && (
+                <div
+                    onClick={() => setShowGuide(false)}
+                    style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100vw',
+                        height: '100vh',
+                        background: 'rgba(0,0,0,0.7)',
+                        backdropFilter: 'blur(8px)',
+                        zIndex: 100,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        animation: 'fadeIn 0.25s ease-out'
+                    }}
+                >
+                    <div
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                            width: '88%',
+                            maxWidth: '380px',
+                            maxHeight: '80vh',
+                            overflowY: 'auto',
+                            borderRadius: '24px',
+                            background: 'linear-gradient(180deg, #1a1a2e 0%, #16162a 100%)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                            padding: '28px 24px',
+                            animation: 'slideUp 0.3s ease-out'
+                        }}
+                    >
+                        {/* Guide Header */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: '24px'
+                        }}>
+                            <div>
+                                <div style={{
+                                    fontSize: '1.3rem',
+                                    fontWeight: '800',
+                                    color: '#fff',
+                                    marginBottom: '4px'
+                                }}>
+                                    이용 가이드
+                                </div>
+                                <div style={{
+                                    fontSize: '0.8rem',
+                                    color: 'rgba(255,255,255,0.4)'
+                                }}>
+                                    5단계로 코스를 만들어 보세요
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setShowGuide(false)}
+                                style={{
+                                    width: '36px',
+                                    height: '36px',
+                                    borderRadius: '50%',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    color: 'rgba(255,255,255,0.5)',
+                                    fontSize: '1.1rem',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        {/* Guide Steps */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                            {GUIDE_STEPS.map((step, i) => (
+                                <div key={i} style={{ display: 'flex', gap: '16px' }}>
+                                    {/* Timeline */}
+                                    <div style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        flexShrink: 0
+                                    }}>
+                                        <div style={{
+                                            width: '40px',
+                                            height: '40px',
+                                            borderRadius: '12px',
+                                            background: 'rgba(0,243,255,0.1)',
+                                            border: '1px solid rgba(0,243,255,0.2)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '1.2rem'
+                                        }}>
+                                            {step.icon}
+                                        </div>
+                                        {i < GUIDE_STEPS.length - 1 && (
+                                            <div style={{
+                                                width: '2px',
+                                                height: '20px',
+                                                background: 'rgba(0,243,255,0.15)',
+                                                margin: '4px 0'
+                                            }} />
+                                        )}
+                                    </div>
+                                    {/* Content */}
+                                    <div style={{ paddingBottom: i < GUIDE_STEPS.length - 1 ? '12px' : '0' }}>
+                                        <div style={{
+                                            fontSize: '0.95rem',
+                                            fontWeight: '700',
+                                            color: '#fff',
+                                            marginBottom: '2px',
+                                            lineHeight: '40px'
+                                        }}>
+                                            {step.title}
+                                        </div>
+                                        <div style={{
+                                            fontSize: '0.8rem',
+                                            color: 'rgba(255,255,255,0.45)',
+                                            lineHeight: '1.4'
+                                        }}>
+                                            {step.desc}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Close Button */}
+                        <button
+                            onClick={() => setShowGuide(false)}
+                            style={{
+                                marginTop: '24px',
+                                width: '100%',
+                                padding: '14px',
+                                borderRadius: '14px',
+                                border: 'none',
+                                background: 'linear-gradient(135deg, #00C6FF 0%, #0072FF 100%)',
+                                color: 'white',
+                                fontSize: '1rem',
+                                fontWeight: '800',
+                                letterSpacing: '1px',
+                                cursor: 'pointer',
+                                boxShadow: '0 0 20px rgba(0,114,255,0.4)'
+                            }}
+                        >
+                            확인
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <style>
+                {`
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+                    @keyframes slideUp {
+                        from { opacity: 0; transform: translateY(30px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `}
+            </style>
         </div>
     );
 };
