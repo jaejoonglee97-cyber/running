@@ -1,0 +1,29 @@
+# Standard ignores
+node_modules/
+dist/
+build/
+.env
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OneDrive / Sync duplications
+# These patterns catch common duplicate file names created by OneDrive or file system conflicts
+# Example: "file (1).txt", "image - Copy.png", "document-ComputerName.docx"
+*(*)*
+*- Copy*
+*- Copy (*)*
+*-DESKTOP-*
+*-LAPTOP-*
+*.tmp
