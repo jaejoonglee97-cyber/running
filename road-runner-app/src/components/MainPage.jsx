@@ -119,6 +119,10 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
 
             setLastDistance(targetDistance);
 
+            // 코스 생성 성공 후 경유지 초기화 (이전 경유지가 다음 생성에 간섭하지 않도록)
+            setWaypoints([]);
+            setWaypointMode(false);
+
             // Generate course description
             generateCourseDescription({
                 startPoint: result.startPoint,

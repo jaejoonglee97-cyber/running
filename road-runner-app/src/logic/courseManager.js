@@ -232,51 +232,125 @@ export class CourseManager {
     }
 
     // =====================================================
-    // 기본 왕복 (경유지 없음)
+    // 🆕 기본 왕복 → 루프(순환) 코스 생성
+    // 여의도 한바퀴, 보라매공원 한바퀴 같은 순환 루프
+    // A→B→C→D→A 형태로 가는길/오는길이 다르게 생성
     // =====================================================
     async generateRoundTripSimple(startPoint, targetDistanceMeters) {
         let currentTargetDistance = targetDistanceMeters;
         let bestResult = null;
         let bestError = Infinity;
 
+        // 거리에 따라 경유지 수 결정
+        const distKm = targetDistanceMeters / 1000;
+        const numWaypoints = distKm >= 8 ? 4 : 3;
+
         for (let attempt = 0; attempt <= MAX_CORRECTION_ATTEMPTS; attempt++) {
             try {
-                console.log(`[Attempt ${attempt + 1}] Target: ${(currentTargetDistance / 1000).toFixed(2)}km`);
+                console.log(`[Loop ${attempt + 1}] Target: ${(currentTargetDistance / 1000).toFixed(2)}km (${numWaypoints} waypoints)`);
 
-                const turnaroundPoint = await this.turnaroundCalculator.calculateTurnaround(
-                    startPoint, currentTargetDistance
+                // 원형으로 경유지 생성
+                const loopWaypoints = await this.turnaroundCalculator.calculateLoopWaypoints(
+                    startPoint, currentTargetDistance, numWaypoints
                 );
 
-                const routeResult = await this.osrm.getRoundTrip(startPoint, turnaroundPoint);
-                const actualDistance = routeResult.distanceMeters;
-                const routePath = routeResult.path;
+                // 루프 라우팅: Start → WP1 → WP2 → WP3 → Start
+                const fullPoints = [startPoint, ...loopWaypoints, startPoint];
+                const routeData = await this.fetchMultiPointRoute(fullPoints);
 
-                const errorRatio = Math.abs(actualDistance - targetDistanceMeters) / targetDistanceMeters;
-                console.log(`[Attempt ${attempt + 1}] Actual: ${(actualDistance / 1000).toFixed(2)}km, Error: ${(errorRatio * 100).toFixed(1)}%`);
+                if (routeData.routes && routeData.routes.length > 0) {
+                    const route = routeData.routes[0];
+                    const actualDistance = route.distance;
+                    const routePath = route.geometry.coordinates.map(c => [c[1], c[0]]);
 
-                if (errorRatio < bestError) {
-                    bestError = errorRatio;
-                    bestResult = { startPoint, turnaroundPoint, routePath };
+                    // 가장 먼 경유지를 turnaroundPoint로 사용 (지도 마커용)
+                    let farthestWp = loopWaypoints[0];
+                    let farthestDist = 0;
+                    for (const wp of loopWaypoints) {
+                        const d = Math.sqrt(
+                            Math.pow(wp.lat - startPoint.lat, 2) +
+                            Math.pow(wp.lng - startPoint.lng, 2)
+                        );
+                        if (d > farthestDist) {
+                            farthestDist = d;
+                            farthestWp = wp;
+                        }
+                    }
+
+                    const errorRatio = Math.abs(actualDistance - targetDistanceMeters) / targetDistanceMeters;
+                    console.log(`[Loop ${attempt + 1}] Actual: ${(actualDistance / 1000).toFixed(2)}km, Error: ${(errorRatio * 100).toFixed(1)}%`);
+
+                    if (errorRatio < bestError) {
+                        bestError = errorRatio;
+                        bestResult = { startPoint, turnaroundPoint: farthestWp, routePath };
+                    }
+
+                    if (errorRatio <= DISTANCE_TOLERANCE) {
+                        console.log("✅ Loop route within tolerance!");
+                        return bestResult;
+                    }
+
+                    const correctionFactor = targetDistanceMeters / actualDistance;
+                    currentTargetDistance = currentTargetDistance * correctionFactor;
+                    currentTargetDistance = Math.max(currentTargetDistance, targetDistanceMeters * 0.3);
+                    currentTargetDistance = Math.min(currentTargetDistance, targetDistanceMeters * 2.0);
                 }
-
-                if (errorRatio <= DISTANCE_TOLERANCE) {
-                    console.log("✅ Within tolerance. Done.");
-                    return bestResult;
-                }
-
-                const correctionFactor = targetDistanceMeters / actualDistance;
-                currentTargetDistance = currentTargetDistance * correctionFactor;
-                currentTargetDistance = Math.max(currentTargetDistance, targetDistanceMeters * 0.3);
-                currentTargetDistance = Math.min(currentTargetDistance, targetDistanceMeters * 2.0);
             } catch (error) {
-                console.warn(`[Attempt ${attempt + 1}] Failed:`, error.message);
+                console.warn(`[Loop ${attempt + 1}] Failed:`, error.message);
                 if (bestResult) break;
                 if (attempt === MAX_CORRECTION_ATTEMPTS) throw error;
             }
         }
 
         if (bestResult) return bestResult;
-        throw new Error("Failed to generate course");
+        throw new Error("Failed to generate loop course");
+    }
+
+    // =====================================================
+    // 🆕 프리셋 추천 코스 경로 생성
+    // 경유지 좌표 기반으로 OSRM 실제 도로 경로 생성
+    // =====================================================
+    async generatePresetCourse(presetCourse) {
+        const { startPoint, waypoints } = presetCourse;
+        const waypointCoords = waypoints.map(wp => ({ lat: wp.lat, lng: wp.lng }));
+
+        // 순환 코스: Start → WP1 → WP2 → ... → Start
+        const fullPoints = [startPoint, ...waypointCoords, startPoint];
+
+        try {
+            console.log(`📍 Generating preset course: ${presetCourse.courseName}`);
+            const routeData = await this.fetchMultiPointRoute(fullPoints);
+
+            if (routeData.routes && routeData.routes.length > 0) {
+                const route = routeData.routes[0];
+                const routePath = route.geometry.coordinates.map(c => [c[1], c[0]]);
+
+                // 가장 먼 경유지를 turnaroundPoint로 사용
+                let farthestWp = waypointCoords[0];
+                let farthestDist = 0;
+                for (const wp of waypointCoords) {
+                    const d = Math.sqrt(
+                        Math.pow(wp.lat - startPoint.lat, 2) +
+                        Math.pow(wp.lng - startPoint.lng, 2)
+                    );
+                    if (d > farthestDist) {
+                        farthestDist = d;
+                        farthestWp = wp;
+                    }
+                }
+
+                return {
+                    startPoint,
+                    turnaroundPoint: farthestWp,
+                    routePath,
+                    actualDistanceMeters: route.distance
+                };
+            }
+            throw new Error("OSRM returned no routes for preset course");
+        } catch (error) {
+            console.error("Preset course generation failed:", error.message);
+            throw error;
+        }
     }
 
     // =====================================================

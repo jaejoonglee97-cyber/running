@@ -124,6 +124,84 @@ export class TurnaroundCalculator {
         }
     }
 
+    /**
+     * 🆕 루프(순환) 코스용 경유지 생성
+     * 시작점 주변에 원형으로 3~4개의 경유지를 배치하여
+     * 자연스러운 순환 코스(예: 여의도 한바퀴, 보라매공원 한바퀴)를 만듦
+     * 
+     * @param {Object} startPoint - { lat, lng }
+     * @param {number} targetDistanceMeters - 전체 목표 거리
+     * @param {number} numWaypoints - 경유지 개수 (기본 3, 긴 거리는 4)
+     * @returns {Promise<Array>} [{ lat, lng }, ...] 경유지 배열
+     */
+    async calculateLoopWaypoints(startPoint, targetDistanceMeters, numWaypoints = 3) {
+        const user_lat = startPoint.lat;
+        const user_lng = startPoint.lng;
+        const target_distance_km = targetDistanceMeters / 1000;
+
+        // 루프 반지름 계산
+        // 원둘레 = 2πR, 도로 네트워크는 직선보다 ~30% 더 길어짐
+        // R = D / (2π × 1.3)
+        const radius_km = target_distance_km / (2 * Math.PI * 1.3);
+        const offset = radius_km / 111; // degree offset
+
+        const angleStep = 360 / numWaypoints;
+
+        // 6가지 회전 방향 시도 → 안전 포인트에 가장 가까운 방향 선택
+        let bestWaypoints = [];
+        let bestScore = Infinity;
+
+        for (let rotation = 0; rotation < 6; rotation++) {
+            // 랜덤 기반 + 60도 회전으로 다양성 확보
+            const baseAngle = (Math.random() * 60) + (rotation * 60);
+            const candidates = [];
+            let totalScore = 0;
+
+            for (let i = 0; i < numWaypoints; i++) {
+                const angleDeg = baseAngle + (i * angleStep);
+                const angleRad = angleDeg * (Math.PI / 180);
+
+                // 약간의 랜덤 변이 추가 (±15%)로 매번 다른 코스 생성
+                const jitter = 0.85 + Math.random() * 0.3;
+                const candLat = user_lat + (offset * jitter * Math.cos(angleRad));
+                const candLng = user_lng + (offset * jitter * Math.sin(angleRad) / Math.cos(user_lat * (Math.PI / 180)));
+
+                const distToSafe = this.getDistanceToNearestSafePoint(candLat, candLng);
+                const distToRiver = this.getDistanceToNearestHangangPoint(candLat, candLng);
+                totalScore += distToSafe * 0.7 + distToRiver * 0.3;
+
+                candidates.push({ lat: candLat, lng: candLng });
+            }
+
+            if (totalScore < bestScore) {
+                bestScore = totalScore;
+                bestWaypoints = candidates;
+            }
+        }
+
+        // 각 경유지를 도로에 스냅
+        const snappedWaypoints = [];
+        for (const wp of bestWaypoints) {
+            try {
+                const nearest = await this.osrm.getNearest(wp.lat, wp.lng);
+                if (nearest?.waypoints?.length > 0) {
+                    snappedWaypoints.push({
+                        lat: nearest.waypoints[0].location[1],
+                        lng: nearest.waypoints[0].location[0]
+                    });
+                } else {
+                    snappedWaypoints.push(wp);
+                }
+            } catch (e) {
+                console.warn("Waypoint snap failed, using raw:", e.message);
+                snappedWaypoints.push(wp);
+            }
+        }
+
+        console.log(`🔵 Generated ${snappedWaypoints.length} loop waypoints (R=${radius_km.toFixed(2)}km)`);
+        return snappedWaypoints;
+    }
+
     // Helper: Haversine distance in KM
     getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
         var R = 6371;
