@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const GUIDE_STEPS = [
     { icon: '🏃', title: '모드 선택', desc: '왕복 또는 편도 코스를 선택하세요' },
@@ -9,15 +9,32 @@ const GUIDE_STEPS = [
     { icon: '📌', title: '저장 & 공유', desc: '마음에 드는 코스를 저장하고 다른 러너에게 추천하세요' },
 ];
 
+// Floating particle component
+const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    size: Math.random() * 3 + 1.5,
+    duration: Math.random() * 8 + 6,
+    delay: Math.random() * 5,
+    opacity: Math.random() * 0.3 + 0.1,
+}));
+
 const StartPage = ({ onStart }) => {
     const [selectedMode, setSelectedMode] = useState(null);
     const [guideOpen, setGuideOpen] = useState(false);
+    const [mounted, setMounted] = useState(false);
     // 첫 방문 시 자동으로 가이드 표시
     const [showGuide, setShowGuide] = useState(() => {
         try {
             return !localStorage.getItem('roadrunner_guide_seen');
         } catch (e) { return false; }
     });
+
+    useEffect(() => {
+        // Trigger entrance animation
+        const t = setTimeout(() => setMounted(true), 100);
+        return () => clearTimeout(t);
+    }, []);
 
     const handleCloseGuide = () => {
         setShowGuide(false);
@@ -34,50 +51,108 @@ const StartPage = ({ onStart }) => {
         <div style={{
             width: '100vw',
             height: '100vh',
-            background: 'linear-gradient(180deg, #0a0a1a 0%, #121225 40%, #1a1a3e 100%)',
+            background: 'linear-gradient(180deg, #0a0a1a 0%, #0d0d2b 30%, #121240 60%, #1a1a3e 100%)',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'flex-start',
-            paddingTop: '80px',
+            paddingTop: '70px',
             paddingBottom: '30px',
             overflowY: 'auto',
-            position: 'relative'
+            position: 'relative',
+            overflow: 'hidden'
         }}>
-            {/* Ambient glow effects */}
+            {/* ===== Floating Particles ===== */}
+            {PARTICLES.map(p => (
+                <div key={p.id} className="particle" style={{
+                    position: 'absolute',
+                    left: p.left,
+                    bottom: '-10px',
+                    width: `${p.size}px`,
+                    height: `${p.size}px`,
+                    borderRadius: '50%',
+                    background: p.id % 3 === 0
+                        ? 'rgba(0,243,255,0.8)'
+                        : p.id % 3 === 1
+                            ? 'rgba(0,114,255,0.7)'
+                            : 'rgba(255,158,0,0.5)',
+                    boxShadow: `0 0 ${p.size * 3}px ${p.id % 3 === 0 ? 'rgba(0,243,255,0.4)' : p.id % 3 === 1 ? 'rgba(0,114,255,0.3)' : 'rgba(255,158,0,0.3)'}`,
+                    animation: `floatUp ${p.duration}s ${p.delay}s infinite linear`,
+                    opacity: p.opacity,
+                    pointerEvents: 'none'
+                }} />
+            ))}
+
+            {/* ===== Ambient glow effects (enhanced) ===== */}
             <div style={{
                 position: 'absolute',
-                top: '-20%',
-                left: '-10%',
-                width: '60%',
-                height: '60%',
-                background: 'radial-gradient(circle, rgba(0,243,255,0.08) 0%, transparent 70%)',
-                pointerEvents: 'none'
+                top: '-15%',
+                left: '-15%',
+                width: '70%',
+                height: '70%',
+                background: 'radial-gradient(circle, rgba(0,243,255,0.1) 0%, transparent 65%)',
+                pointerEvents: 'none',
+                animation: 'glowPulse 4s ease-in-out infinite alternate'
             }} />
             <div style={{
                 position: 'absolute',
-                bottom: '-20%',
-                right: '-10%',
-                width: '60%',
-                height: '60%',
-                background: 'radial-gradient(circle, rgba(0,114,255,0.08) 0%, transparent 70%)',
-                pointerEvents: 'none'
+                bottom: '-15%',
+                right: '-15%',
+                width: '70%',
+                height: '70%',
+                background: 'radial-gradient(circle, rgba(0,114,255,0.1) 0%, transparent 65%)',
+                pointerEvents: 'none',
+                animation: 'glowPulse 4s 2s ease-in-out infinite alternate'
             }} />
+            {/* Center spotlight */}
+            <div style={{
+                position: 'absolute',
+                top: '10%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '300px',
+                height: '300px',
+                background: 'radial-gradient(circle, rgba(0,200,255,0.06) 0%, transparent 70%)',
+                pointerEvents: 'none',
+                animation: 'glowPulse 3s 1s ease-in-out infinite alternate'
+            }} />
+
+            {/* ===== Running silhouette track line ===== */}
+            <div style={{
+                position: 'absolute',
+                top: '22%',
+                left: 0,
+                right: 0,
+                height: '1px',
+                background: 'linear-gradient(90deg, transparent 0%, rgba(0,243,255,0.15) 30%, rgba(0,243,255,0.3) 50%, rgba(0,243,255,0.15) 70%, transparent 100%)',
+                pointerEvents: 'none'
+            }}>
+                <div className="runner-dot" style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: '#00f3ff',
+                    boxShadow: '0 0 12px rgba(0,243,255,0.8), 0 0 30px rgba(0,243,255,0.4)',
+                    position: 'absolute',
+                    top: '-2.5px',
+                    animation: 'runAcross 4s ease-in-out infinite'
+                }} />
+            </div>
 
             {/* Guide Button (Top Right) */}
             <button
                 onClick={() => setShowGuide(true)}
                 style={{
                     position: 'absolute',
-                    top: '50px',
+                    top: '24px',
                     right: '20px',
                     zIndex: 10,
                     height: '38px',
                     borderRadius: '19px',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    background: 'rgba(255,255,255,0.08)',
-                    backdropFilter: 'blur(8px)',
-                    color: 'rgba(255,255,255,0.6)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.06)',
+                    backdropFilter: 'blur(12px)',
+                    color: 'rgba(255,255,255,0.5)',
                     fontSize: '0.8rem',
                     fontWeight: '600',
                     cursor: 'pointer',
@@ -85,37 +160,73 @@ const StartPage = ({ onStart }) => {
                     alignItems: 'center',
                     gap: '6px',
                     padding: '0 14px',
-                    transition: 'all 0.3s'
+                    transition: 'all 0.3s',
+                    opacity: mounted ? 1 : 0,
+                    transform: mounted ? 'translateY(0)' : 'translateY(-10px)',
                 }}
             >
                 <span style={{ fontSize: '1rem' }}>📖</span>
                 이용 가이드
             </button>
 
-            {/* App Title */}
-            <div style={{ textAlign: 'center', marginBottom: '30px', zIndex: 1 }}>
+            {/* ===== App Title (enhanced with glow + entrance) ===== */}
+            <div style={{
+                textAlign: 'center',
+                marginBottom: '12px',
+                zIndex: 1,
+                opacity: mounted ? 1 : 0,
+                transform: mounted ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.95)',
+                transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1)'
+            }}>
+                {/* Small running emoji bouncing above title */}
                 <div style={{
-                    fontSize: '2.5rem',
+                    fontSize: '2rem',
+                    marginBottom: '4px',
+                    animation: 'bounce 2s ease-in-out infinite',
+                    display: 'inline-block'
+                }}>
+                    🏃‍♂️
+                </div>
+                <div className="app-title" style={{
+                    fontSize: '2.8rem',
                     fontWeight: '900',
-                    letterSpacing: '2px',
-                    background: 'linear-gradient(135deg, #00f3ff 0%, #0072ff 50%, #00f3ff 100%)',
+                    letterSpacing: '3px',
+                    background: 'linear-gradient(135deg, #00f3ff 0%, #0072ff 40%, #a855f7 70%, #00f3ff 100%)',
+                    backgroundSize: '200% 200%',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
-                    textShadow: 'none',
-                    marginBottom: '8px'
+                    animation: 'gradientShift 4s ease-in-out infinite',
+                    marginBottom: '12px',
+                    lineHeight: 1.2,
+                    filter: 'drop-shadow(0 0 20px rgba(0,200,255,0.3))'
                 }}>
-                    🏃 달려라 하니
+                    달려라 하니
                 </div>
+                {/* Subtitle — 변경됨 */}
                 <div style={{
-                    fontSize: '1rem',
-                    color: 'rgba(255,255,255,0.4)',
-                    letterSpacing: '3px',
-                    fontWeight: '300'
+                    fontSize: '0.95rem',
+                    color: 'rgba(255,255,255,0.55)',
+                    letterSpacing: '2px',
+                    fontWeight: '400',
+                    fontStyle: 'italic',
+                    opacity: mounted ? 1 : 0,
+                    transition: 'opacity 1.2s ease 0.5s'
                 }}>
-                    코스를 추천받아 보세요
+                    ✨ 그 시절 하니도 추천 받은 코스
                 </div>
             </div>
+
+            {/* ===== Decorative divider ===== */}
+            <div style={{
+                width: '60px',
+                height: '2px',
+                borderRadius: '1px',
+                background: 'linear-gradient(90deg, transparent, rgba(0,243,255,0.5), transparent)',
+                marginBottom: '24px',
+                opacity: mounted ? 1 : 0,
+                transition: 'opacity 1s ease 0.6s'
+            }} />
 
             {/* Mode Selection Cards */}
             <div style={{
@@ -124,7 +235,10 @@ const StartPage = ({ onStart }) => {
                 gap: '16px',
                 width: '85%',
                 maxWidth: '360px',
-                zIndex: 1
+                zIndex: 1,
+                opacity: mounted ? 1 : 0,
+                transform: mounted ? 'translateY(0)' : 'translateY(30px)',
+                transition: 'all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s'
             }}>
                 {/* Round Trip Card */}
                 <button
@@ -383,6 +497,7 @@ const StartPage = ({ onStart }) => {
             <button
                 onClick={handleGo}
                 disabled={!selectedMode}
+                className={selectedMode ? 'start-btn-pulse' : ''}
                 style={{
                     marginTop: '20px',
                     width: '85%',
@@ -395,7 +510,7 @@ const StartPage = ({ onStart }) => {
                     letterSpacing: '3px',
                     color: 'white',
                     cursor: selectedMode ? 'pointer' : 'not-allowed',
-                    opacity: selectedMode ? 1 : 0.4,
+                    opacity: mounted ? (selectedMode ? 1 : 0.4) : 0,
                     background: selectedMode === 'oneWay'
                         ? 'linear-gradient(135deg, #ff9e00 0%, #ff6600 100%)'
                         : 'linear-gradient(135deg, #00C6FF 0%, #0072FF 100%)',
@@ -405,7 +520,7 @@ const StartPage = ({ onStart }) => {
                             : '0 0 30px rgba(0,114,255,0.5)'
                         : 'none',
                     transition: 'all 0.4s ease',
-                    transform: selectedMode ? 'scale(1)' : 'scale(0.95)',
+                    transform: mounted ? (selectedMode ? 'scale(1)' : 'scale(0.95)') : 'translateY(20px)',
                     zIndex: 1
                 }}
             >
@@ -590,6 +705,43 @@ const StartPage = ({ onStart }) => {
                     @keyframes slideUp {
                         from { opacity: 0; transform: translateY(30px); }
                         to { opacity: 1; transform: translateY(0); }
+                    }
+                    @keyframes floatUp {
+                        0% {
+                            transform: translateY(0) translateX(0);
+                            opacity: 0;
+                        }
+                        10% { opacity: 1; }
+                        90% { opacity: 1; }
+                        100% {
+                            transform: translateY(-100vh) translateX(20px);
+                            opacity: 0;
+                        }
+                    }
+                    @keyframes glowPulse {
+                        0% { opacity: 0.4; transform: scale(1); }
+                        100% { opacity: 1; transform: scale(1.15); }
+                    }
+                    @keyframes gradientShift {
+                        0% { background-position: 0% 50%; }
+                        50% { background-position: 100% 50%; }
+                        100% { background-position: 0% 50%; }
+                    }
+                    @keyframes bounce {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-8px); }
+                    }
+                    @keyframes runAcross {
+                        0% { left: -2%; }
+                        100% { left: 102%; }
+                    }
+                    @keyframes buttonPulse {
+                        0% { box-shadow: 0 0 20px rgba(0,114,255,0.4); }
+                        50% { box-shadow: 0 0 40px rgba(0,114,255,0.7), 0 0 60px rgba(0,114,255,0.3); }
+                        100% { box-shadow: 0 0 20px rgba(0,114,255,0.4); }
+                    }
+                    .start-btn-pulse {
+                        animation: buttonPulse 2s ease-in-out infinite;
                     }
                 `}
             </style>
