@@ -11,6 +11,7 @@ const GUIDE_STEPS = [
 
 const StartPage = ({ onStart }) => {
     const [selectedMode, setSelectedMode] = useState(null);
+    const [guideOpen, setGuideOpen] = useState(false);
     // 첫 방문 시 자동으로 가이드 표시
     const [showGuide, setShowGuide] = useState(() => {
         try {
@@ -276,7 +277,7 @@ const StartPage = ({ onStart }) => {
                 </button>
             </div>
 
-            {/* Inline Guide — 활용 가이드 */}
+            {/* Inline Guide — 활용 가이드 (접기/펼치기) */}
             <div style={{
                 width: '85%',
                 maxWidth: '360px',
@@ -284,63 +285,97 @@ const StartPage = ({ onStart }) => {
                 borderRadius: '16px',
                 border: '1px solid rgba(255,255,255,0.08)',
                 background: 'rgba(255,255,255,0.03)',
-                padding: '16px 18px',
-                zIndex: 1
+                overflow: 'hidden',
+                zIndex: 1,
+                transition: 'all 0.3s ease'
             }}>
+                {/* 가이드 헤더 (클릭 시 펼치기/접기) */}
+                <button
+                    onClick={() => setGuideOpen(!guideOpen)}
+                    style={{
+                        width: '100%',
+                        padding: '14px 18px',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}
+                >
+                    <div style={{
+                        fontSize: '0.8rem',
+                        fontWeight: '700',
+                        color: 'rgba(255,255,255,0.5)',
+                        letterSpacing: '1px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                    }}>
+                        <span style={{ fontSize: '0.9rem' }}>📖</span> 활용 가이드
+                    </div>
+                    <span style={{
+                        fontSize: '0.85rem',
+                        color: 'rgba(255,255,255,0.3)',
+                        transition: 'transform 0.3s ease',
+                        transform: guideOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        display: 'inline-block'
+                    }}>
+                        ▼
+                    </span>
+                </button>
+
+                {/* 가이드 내용 (접기/펼치기) */}
                 <div style={{
-                    fontSize: '0.8rem',
-                    fontWeight: '700',
-                    color: 'rgba(255,255,255,0.5)',
-                    marginBottom: '12px',
-                    letterSpacing: '1px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
+                    maxHeight: guideOpen ? '400px' : '0',
+                    opacity: guideOpen ? 1 : 0,
+                    transition: 'max-height 0.35s ease, opacity 0.25s ease',
+                    overflow: 'hidden'
                 }}>
-                    <span style={{ fontSize: '0.9rem' }}>📖</span> 활용 가이드
-                </div>
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '8px'
-                }}>
-                    {GUIDE_STEPS.map((step, i) => (
-                        <div key={i} style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '10px'
-                        }}>
-                            <div style={{
-                                width: '28px',
-                                height: '28px',
-                                borderRadius: '8px',
-                                background: 'rgba(0,243,255,0.08)',
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        padding: '0 18px 16px'
+                    }}>
+                        {GUIDE_STEPS.map((step, i) => (
+                            <div key={i} style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: '0.85rem',
-                                flexShrink: 0
+                                gap: '10px'
                             }}>
-                                {step.icon}
-                            </div>
-                            <div style={{ flex: 1, lineHeight: '1.3' }}>
-                                <span style={{
-                                    fontSize: '0.75rem',
-                                    fontWeight: '700',
-                                    color: 'rgba(255,255,255,0.7)'
+                                <div style={{
+                                    width: '28px',
+                                    height: '28px',
+                                    borderRadius: '8px',
+                                    background: 'rgba(0,243,255,0.08)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '0.85rem',
+                                    flexShrink: 0
                                 }}>
-                                    {step.title}
-                                </span>
-                                <span style={{
-                                    fontSize: '0.7rem',
-                                    color: 'rgba(255,255,255,0.35)',
-                                    marginLeft: '6px'
-                                }}>
-                                    {step.desc}
-                                </span>
+                                    {step.icon}
+                                </div>
+                                <div style={{ flex: 1, lineHeight: '1.3' }}>
+                                    <span style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: '700',
+                                        color: 'rgba(255,255,255,0.7)'
+                                    }}>
+                                        {step.title}
+                                    </span>
+                                    <span style={{
+                                        fontSize: '0.7rem',
+                                        color: 'rgba(255,255,255,0.35)',
+                                        marginLeft: '6px'
+                                    }}>
+                                        {step.desc}
+                                    </span>
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
             </div>
 
