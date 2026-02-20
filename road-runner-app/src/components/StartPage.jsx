@@ -3,14 +3,25 @@ import React, { useState } from 'react';
 const GUIDE_STEPS = [
     { icon: '🏃', title: '모드 선택', desc: '왕복 또는 편도 코스를 선택하세요' },
     { icon: '📍', title: '출발지 설정', desc: '현위치 또는 지도에서 직접 출발지를 정하세요' },
+    { icon: '🗺️', title: '경유지 추가', desc: '꼭 지나고 싶은 장소가 있다면 경유지를 추가하세요 (최대 3개)' },
     { icon: '📏', title: '거리 설정', desc: '+/- 버튼으로 원하는 거리를 조절하세요' },
-    { icon: '🚀', title: '코스 생성', desc: '버튼을 누르면 AI가 최적 경로를 추천합니다' },
-    { icon: '📤', title: '공유', desc: '마음에 드는 코스를 친구에게 공유하세요' },
+    { icon: '🚀', title: '코스 생성', desc: '공원·하천길을 우선으로 안전한 경로를 추천합니다' },
+    { icon: '📌', title: '저장 & 공유', desc: '마음에 드는 코스를 저장하고 다른 러너에게 추천하세요' },
 ];
 
 const StartPage = ({ onStart }) => {
     const [selectedMode, setSelectedMode] = useState(null);
-    const [showGuide, setShowGuide] = useState(false);
+    // 첫 방문 시 자동으로 가이드 표시
+    const [showGuide, setShowGuide] = useState(() => {
+        try {
+            return !localStorage.getItem('roadrunner_guide_seen');
+        } catch (e) { return false; }
+    });
+
+    const handleCloseGuide = () => {
+        setShowGuide(false);
+        try { localStorage.setItem('roadrunner_guide_seen', '1'); } catch (e) { }
+    };
 
     const handleGo = () => {
         if (selectedMode) {
@@ -26,8 +37,10 @@ const StartPage = ({ onStart }) => {
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
+            justifyContent: 'flex-start',
+            paddingTop: '80px',
+            paddingBottom: '30px',
+            overflowY: 'auto',
             position: 'relative'
         }}>
             {/* Ambient glow effects */}
@@ -58,27 +71,28 @@ const StartPage = ({ onStart }) => {
                     top: '50px',
                     right: '20px',
                     zIndex: 10,
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
+                    height: '38px',
+                    borderRadius: '19px',
                     border: '1px solid rgba(255,255,255,0.15)',
                     background: 'rgba(255,255,255,0.08)',
                     backdropFilter: 'blur(8px)',
                     color: 'rgba(255,255,255,0.6)',
-                    fontSize: '1.1rem',
-                    fontWeight: '700',
+                    fontSize: '0.8rem',
+                    fontWeight: '600',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
+                    gap: '6px',
+                    padding: '0 14px',
                     transition: 'all 0.3s'
                 }}
             >
-                ?
+                <span style={{ fontSize: '1rem' }}>📖</span>
+                이용 가이드
             </button>
 
             {/* App Title */}
-            <div style={{ textAlign: 'center', marginBottom: '60px', zIndex: 1 }}>
+            <div style={{ textAlign: 'center', marginBottom: '30px', zIndex: 1 }}>
                 <div style={{
                     fontSize: '3.5rem',
                     fontWeight: '900',
@@ -262,12 +276,80 @@ const StartPage = ({ onStart }) => {
                 </button>
             </div>
 
+            {/* Inline Guide — 활용 가이드 */}
+            <div style={{
+                width: '85%',
+                maxWidth: '360px',
+                marginTop: '20px',
+                borderRadius: '16px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.03)',
+                padding: '16px 18px',
+                zIndex: 1
+            }}>
+                <div style={{
+                    fontSize: '0.8rem',
+                    fontWeight: '700',
+                    color: 'rgba(255,255,255,0.5)',
+                    marginBottom: '12px',
+                    letterSpacing: '1px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                }}>
+                    <span style={{ fontSize: '0.9rem' }}>📖</span> 활용 가이드
+                </div>
+                <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                }}>
+                    {GUIDE_STEPS.map((step, i) => (
+                        <div key={i} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px'
+                        }}>
+                            <div style={{
+                                width: '28px',
+                                height: '28px',
+                                borderRadius: '8px',
+                                background: 'rgba(0,243,255,0.08)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.85rem',
+                                flexShrink: 0
+                            }}>
+                                {step.icon}
+                            </div>
+                            <div style={{ flex: 1, lineHeight: '1.3' }}>
+                                <span style={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: '700',
+                                    color: 'rgba(255,255,255,0.7)'
+                                }}>
+                                    {step.title}
+                                </span>
+                                <span style={{
+                                    fontSize: '0.7rem',
+                                    color: 'rgba(255,255,255,0.35)',
+                                    marginLeft: '6px'
+                                }}>
+                                    {step.desc}
+                                </span>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
             {/* Start Button */}
             <button
                 onClick={handleGo}
                 disabled={!selectedMode}
                 style={{
-                    marginTop: '40px',
+                    marginTop: '20px',
                     width: '85%',
                     maxWidth: '360px',
                     padding: '20px',
@@ -304,13 +386,13 @@ const StartPage = ({ onStart }) => {
                 letterSpacing: '1px',
                 zIndex: 1
             }}>
-                ROAD RUNNER v1.0
+                ROAD RUNNER v1.1
             </div>
 
             {/* ==================== GUIDE MODAL ==================== */}
             {showGuide && (
                 <div
-                    onClick={() => setShowGuide(false)}
+                    onClick={() => handleCloseGuide()}
                     style={{
                         position: 'fixed',
                         top: 0,
@@ -365,7 +447,7 @@ const StartPage = ({ onStart }) => {
                                 </div>
                             </div>
                             <button
-                                onClick={() => setShowGuide(false)}
+                                onClick={() => handleCloseGuide()}
                                 style={{
                                     width: '36px',
                                     height: '36px',
@@ -442,7 +524,7 @@ const StartPage = ({ onStart }) => {
 
                         {/* Close Button */}
                         <button
-                            onClick={() => setShowGuide(false)}
+                            onClick={() => handleCloseGuide()}
                             style={{
                                 marginTop: '24px',
                                 width: '100%',

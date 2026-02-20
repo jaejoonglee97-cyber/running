@@ -38,8 +38,22 @@ const endIcon = new L.DivIcon({
     iconAnchor: [10, 10],
 });
 
-// Component to track map center movements
-const MapCenterTracker = ({ onCenterChange, isTracking }) => {
+// 경유지 아이콘 (보라색)
+const waypointIcon = new L.DivIcon({
+    className: '',
+    html: `<div style="
+        width: 18px; height: 18px;
+        background: #a855f7;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 0 12px rgba(168,85,247,0.8), 0 0 24px rgba(168,85,247,0.4);
+    "></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+});
+
+// Component to track map center movements AND handle clicks for waypoints
+const MapInteraction = ({ onCenterChange, isTracking, waypointMode, onWaypointAdd }) => {
     const map = useMapEvents({
         moveend: () => {
             if (isTracking && onCenterChange) {
@@ -48,13 +62,22 @@ const MapCenterTracker = ({ onCenterChange, isTracking }) => {
         },
         load: () => {
             if (isTracking && onCenterChange) onCenterChange(map.getCenter());
+        },
+        click: (e) => {
+            if (waypointMode && onWaypointAdd) {
+                onWaypointAdd({ lat: e.latlng.lat, lng: e.latlng.lng });
+            }
         }
     });
     return null;
 };
 
-const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMode, onCenterChange, runMode }) => {
-    const [mapCenter, setMapCenter] = useState([37.5665, 126.9780]); // Default: Seoul
+const FullMap = ({
+    startPoint, turnaroundPoint, routePath, isLoading,
+    isCustomMode, onCenterChange, runMode,
+    waypoints = [], waypointMode = false, onWaypointAdd, onWaypointRemove
+}) => {
+    const [mapCenter, setMapCenter] = useState([37.5665, 126.9780]);
     const [isMapTilesLoaded, setIsMapTilesLoaded] = useState(false);
 
     const VWORLD_API_KEY = "C472C587-78DE-3BB8-8939-F86C181BE19A";
@@ -84,7 +107,12 @@ const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMo
                     }}
                 />
 
-                <MapCenterTracker isTracking={isCustomMode} onCenterChange={onCenterChange} />
+                <MapInteraction
+                    isTracking={isCustomMode}
+                    onCenterChange={onCenterChange}
+                    waypointMode={waypointMode}
+                    onWaypointAdd={onWaypointAdd}
+                />
 
                 {/* Start Marker */}
                 {startPoint && !isCustomMode && (
@@ -92,6 +120,29 @@ const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMo
                         <Popup>출발지</Popup>
                     </Marker>
                 )}
+
+                {/* Waypoint Markers */}
+                {waypoints.map((wp, idx) => (
+                    <Marker
+                        key={`wp-${idx}`}
+                        position={[wp.lat, wp.lng]}
+                        icon={waypointIcon}
+                        eventHandlers={{
+                            click: () => {
+                                if (onWaypointRemove) onWaypointRemove(idx);
+                            }
+                        }}
+                    >
+                        <Popup>
+                            경유지 {idx + 1}
+                            <br />
+                            <span style={{ fontSize: '0.7rem', cursor: 'pointer', color: '#ff5050' }}
+                                onClick={() => onWaypointRemove && onWaypointRemove(idx)}>
+                                삭제
+                            </span>
+                        </Popup>
+                    </Marker>
+                ))}
 
                 {/* End/Turnaround Marker */}
                 {turnaroundPoint && (
@@ -165,6 +216,33 @@ const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMo
                 </div>
             )}
 
+            {/* Waypoint Mode Indicator */}
+            {waypointMode && (
+                <div style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    zIndex: 1400,
+                    pointerEvents: 'none',
+                    textAlign: 'center'
+                }}>
+                    <div style={{
+                        fontSize: '0.8rem',
+                        color: '#a855f7',
+                        fontWeight: '700',
+                        padding: '8px 16px',
+                        borderRadius: '12px',
+                        background: 'rgba(168,85,247,0.15)',
+                        border: '1px solid rgba(168,85,247,0.3)',
+                        backdropFilter: 'blur(8px)',
+                        animation: 'pulse 2s infinite'
+                    }}>
+                        🗺️ 지도를 탭하여 경유지 추가
+                    </div>
+                </div>
+            )}
+
             {/* Map Loading Overlay */}
             {!isMapTilesLoaded && (
                 <div className="glass-panel" style={{
@@ -215,7 +293,13 @@ const FullMap = ({ startPoint, turnaroundPoint, routePath, isLoading, isCustomMo
             )}
 
             <style>
-                {`@keyframes spin { to { transform: rotate(360deg); } }`}
+                {`
+                    @keyframes spin { to { transform: rotate(360deg); } }
+                    @keyframes pulse {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.6; }
+                    }
+                `}
             </style>
         </div>
     );
