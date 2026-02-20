@@ -95,9 +95,9 @@ const StartPage = ({ onStart }) => {
             {/* App Title */}
             <div style={{ textAlign: 'center', marginBottom: '30px', zIndex: 1 }}>
                 <div style={{
-                    fontSize: '3.5rem',
+                    fontSize: '2.5rem',
                     fontWeight: '900',
-                    letterSpacing: '4px',
+                    letterSpacing: '2px',
                     background: 'linear-gradient(135deg, #00f3ff 0%, #0072ff 50%, #00f3ff 100%)',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
@@ -105,7 +105,7 @@ const StartPage = ({ onStart }) => {
                     textShadow: 'none',
                     marginBottom: '8px'
                 }}>
-                    🏃 RUN
+                    🏃 달려라 하니
                 </div>
                 <div style={{
                     fontSize: '1rem',
@@ -113,7 +113,7 @@ const StartPage = ({ onStart }) => {
                     letterSpacing: '3px',
                     fontWeight: '300'
                 }}>
-                    CHOOSE YOUR PATH
+                    코스를 추천받아 보세요
                 </div>
             </div>
 
@@ -421,7 +421,7 @@ const StartPage = ({ onStart }) => {
                 letterSpacing: '1px',
                 zIndex: 1
             }}>
-                ROAD RUNNER v1.1
+                made by JJ
             </div>
 
             {/* ==================== GUIDE MODAL ==================== */}
