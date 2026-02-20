@@ -18,6 +18,22 @@ yarn-error.log*
 *.swp
 *.swo
 
+# Build logs / debug output
+build_*.txt
+*.log
+
+# Personal scripts
+auto_push.bat
+
+# Agent / AI directories
+.gemini/
+.agent/
+
+# Legacy root-level code (moved to road-runner-app/src/)
+/components/
+/logic/
+/assets/
+
 # OneDrive / Sync duplications
 # These patterns catch common duplicate file names created by OneDrive or file system conflicts
 # Example: "file (1).txt", "image - Copy.png", "document-ComputerName.docx"

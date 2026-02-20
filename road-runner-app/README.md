@@ -1,16 +1,33 @@
-# React + Vite
+# 달려라 하니 — Frontend (React + Vite)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+이 디렉토리는 **달려라 하니** 웹앱의 프론트엔드 소스입니다.
 
-Currently, two official plugins are available:
+## 개발 서버 실행
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+## 빌드
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm run build    # → dist/
+npm run preview  # 빌드 결과 미리보기
+```
 
-## Expanding the ESLint configuration
+## 주요 디렉토리
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| 디렉토리 | 설명 |
+|----------|------|
+| `src/components/` | React UI 컴포넌트 (StartPage, MainPage, FullMap 등) |
+| `src/logic/` | 비즈니스 로직 (코스 생성, OSRM API, GPS 등) |
+| `src/assets/` | 이미지 리소스 (앱 아이콘, 마커, 배경 등) |
+| `apps-script/` | Google Apps Script 백엔드 (코스 저장/불러오기) |
+
+## 기술 스택
+
+- React 19 + Vite 7
+- Leaflet + React-Leaflet (지도)
+- OSRM API (경로 계산)
+- Google Apps Script (데이터 저장)
