@@ -134,7 +134,7 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
 
         } catch (error) {
             console.error("Failed to generate course:", error);
-            alert("경로 생성에 실패했습니다.\n\n가능한 원인:\n1. OSRM 서버 응답 지연 (잠시 후 다시 시도)\n2. 시작점 주변에 인식 가능한 도로 없음\n3. 네트워크 연결 불안정");
+            alert("경로 생성에 실패했습니다.\n(자동 재시도 후에도 실패)\n\n💡 해결 방법:\n1. 10초 후 다시 시도해 주세요\n2. 시작점을 도로 근처로 이동해 보세요\n3. Wi-Fi/데이터 연결을 확인해 주세요");
         } finally {
             setIsLoading(false);
         }
