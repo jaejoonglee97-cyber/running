@@ -22,76 +22,83 @@ const ControlPanel = ({ onStart, isLoading, isReady, startMode, runMode = 'round
     return (
         <div className="glass-panel" style={{
             position: 'absolute',
-            bottom: '30px',
-            left: '20px',
-            right: '20px',
-            borderRadius: '24px',
-            padding: '24px',
+            bottom: '12px',
+            left: '12px',
+            right: '12px',
+            borderRadius: '20px',
+            padding: '14px 16px',
             zIndex: 1000,
             color: 'white'
         }}>
-            {/* Distance Control */}
-            <div style={{ marginBottom: '25px', textAlign: 'center' }}>
+            {/* Distance Control — inline compact */}
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '14px',
+                marginBottom: '10px'
+            }}>
                 <div style={{
-                    fontSize: '0.9rem',
+                    fontSize: '0.75rem',
                     color: 'var(--text-secondary)',
-                    marginBottom: '10px',
-                    letterSpacing: '1px'
+                    letterSpacing: '1px',
+                    flexShrink: 0
                 }}>
-                    {isOneWay ? '편도 거리' : '왕복 거리'}
+                    {isOneWay ? '편도' : '왕복'}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px' }}>
-                    <button
-                        onClick={() => adjustDistance(-0.5)}
-                        disabled={isLoading}
-                        style={{
-                            width: '50px', height: '50px',
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '50%',
-                            color: 'white',
-                            fontSize: '1.5rem',
-                            cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}
-                    >
-                        -
-                    </button>
+                <button
+                    onClick={() => adjustDistance(-0.5)}
+                    disabled={isLoading}
+                    style={{
+                        width: '38px', height: '38px',
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '50%',
+                        color: 'white',
+                        fontSize: '1.3rem',
+                        cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0
+                    }}
+                >
+                    -
+                </button>
 
-                    <div style={{
-                        fontSize: '3.5rem',
-                        fontWeight: '800',
-                        fontFamily: 'sans-serif',
-                        minWidth: '140px',
-                        textAlign: 'center',
-                        color: accentColor,
-                        textShadow: `0 0 10px ${accentColor}50`
-                    }}>
-                        {distanceKm.toFixed(1)} <span style={{ fontSize: '1rem', color: '#888', fontWeight: 'normal' }}>KM</span>
-                    </div>
-
-                    <button
-                        onClick={() => adjustDistance(0.5)}
-                        disabled={isLoading}
-                        style={{
-                            width: '50px', height: '50px',
-                            background: 'rgba(255,255,255,0.1)',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            borderRadius: '50%',
-                            color: 'white',
-                            fontSize: '1.5rem',
-                            cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}
-                    >
-                        +
-                    </button>
+                <div style={{
+                    fontSize: '2.4rem',
+                    fontWeight: '800',
+                    fontFamily: 'sans-serif',
+                    minWidth: '100px',
+                    textAlign: 'center',
+                    color: accentColor,
+                    textShadow: `0 0 10px ${accentColor}50`,
+                    lineHeight: 1
+                }}>
+                    {distanceKm.toFixed(1)} <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: 'normal' }}>KM</span>
                 </div>
+
+                <button
+                    onClick={() => adjustDistance(0.5)}
+                    disabled={isLoading}
+                    style={{
+                        width: '38px', height: '38px',
+                        background: 'rgba(255,255,255,0.1)',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        borderRadius: '50%',
+                        color: 'white',
+                        fontSize: '1.3rem',
+                        cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0
+                    }}
+                >
+                    +
+                </button>
             </div>
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '10px' }}>
+            {/* Action Buttons — compact row */}
+            <div style={{ display: 'flex', gap: '8px' }}>
                 {/* Share Button */}
                 <button
                     onClick={() => {
@@ -109,13 +116,13 @@ const ControlPanel = ({ onStart, isLoading, isReady, startMode, runMode = 'round
                     }}
                     disabled={isLoading}
                     style={{
-                        flex: '0 0 60px',
-                        height: '60px',
-                        borderRadius: '16px',
+                        flex: '0 0 48px',
+                        height: '48px',
+                        borderRadius: '14px',
                         border: 'none',
                         background: 'rgba(255, 255, 255, 0.15)',
                         color: 'white',
-                        fontSize: '1.5rem',
+                        fontSize: '1.3rem',
                         cursor: isLoading ? 'not-allowed' : 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -133,10 +140,10 @@ const ControlPanel = ({ onStart, isLoading, isReady, startMode, runMode = 'round
                     disabled={isLoading || !isReady}
                     style={{
                         flex: 1,
-                        padding: '18px',
-                        borderRadius: '16px',
+                        padding: '14px',
+                        borderRadius: '14px',
                         border: 'none',
-                        fontSize: '1.2rem',
+                        fontSize: '1.05rem',
                         fontWeight: '900',
                         color: 'white',
                         letterSpacing: '2px',

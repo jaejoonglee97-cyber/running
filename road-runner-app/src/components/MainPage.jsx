@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import FullMap from './FullMap';
 import ControlPanel from './DistanceBottomSheet';
+import SaveCourseModal from './SaveCourseModal';
+import SharedCoursesPanel from './SharedCoursesPanel';
 import { CourseManager } from '../logic/courseManager';
 import { generateCourseDescription } from '../logic/courseDescription';
+import { saveCourse } from '../logic/sheetsApi';
 
 const MainPage = ({ runMode = 'roundTrip', onBack }) => {
     const [courseData, setCourseData] = useState({
@@ -13,6 +16,12 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [courseDescription, setCourseDescription] = useState(null);
     const [lastDistance, setLastDistance] = useState(0);
+
+    // 코스 공유 관련 state
+    const [showSaveModal, setShowSaveModal] = useState(false);
+    const [showSharedCourses, setShowSharedCourses] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
 
     // Default to 'custom' (Map Selection)
     const [startMode, setStartMode] = useState('custom'); // 'current' | 'custom'
@@ -105,6 +114,55 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    // === 코스 저장 핸들러 ===
+    const handleSaveCourse = async ({ courseName, authorName }) => {
+        setIsSaving(true);
+        try {
+            const endPoint = courseData.turnaroundPoint;
+            await saveCourse({
+                courseName,
+                runMode,
+                distanceKm: (lastDistance / 1000).toFixed(1),
+                startLat: courseData.startPoint?.lat || 0,
+                startLng: courseData.startPoint?.lng || 0,
+                endLat: endPoint?.lat || 0,
+                endLng: endPoint?.lng || 0,
+                routePath: courseData.routePath,
+                title: courseDescription?.title || '',
+                subtitle: courseDescription?.subtitle || '',
+                tags: courseDescription?.tags || [],
+                authorName
+            });
+            setShowSaveModal(false);
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
+        } catch (err) {
+            console.error('코스 저장 실패:', err);
+            alert('코스 저장에 실패했습니다. 다시 시도해주세요.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // === 공유 코스 불러오기 ===
+    const handleLoadSharedCourse = (course) => {
+        const routePath = Array.isArray(course.routePath)
+            ? course.routePath
+            : (typeof course.routePath === 'string' ? JSON.parse(course.routePath) : []);
+
+        setCourseData({
+            startPoint: { lat: Number(course.startLat), lng: Number(course.startLng) },
+            turnaroundPoint: { lat: Number(course.endLat), lng: Number(course.endLng) },
+            routePath
+        });
+        setCourseDescription({
+            title: course.courseName || course.title,
+            subtitle: course.subtitle || '',
+            tags: typeof course.tags === 'string' ? course.tags.split(',') : (course.tags || [])
+        });
+        setLastDistance(Number(course.distanceKm) * 1000);
     };
 
     const isReady = startMode === 'custom' || (startMode === 'current' && !!gpsLocation);
@@ -259,6 +317,73 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
                 </div>
             )}
 
+            {/* Save Course Button — 코스 생성 후 표시 */}
+            {courseData.routePath.length > 0 && courseDescription && (
+                <button
+                    onClick={() => setShowSaveModal(true)}
+                    style={{
+                        position: 'absolute',
+                        top: '100px',
+                        right: '16px',
+                        zIndex: 1600,
+                        height: '44px',
+                        borderRadius: '14px',
+                        background: saveSuccess
+                            ? 'rgba(0,200,100,0.25)'
+                            : 'rgba(255,158,0,0.2)',
+                        backdropFilter: 'blur(12px)',
+                        color: 'white',
+                        fontSize: '0.8rem',
+                        fontWeight: '700',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '0 14px',
+                        border: saveSuccess
+                            ? '1px solid rgba(0,200,100,0.4)'
+                            : '1px solid rgba(255,158,0,0.4)',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                        transition: 'all 0.3s ease'
+                    }}
+                >
+                    <span style={{ fontSize: '1rem' }}>
+                        {saveSuccess ? '✅' : '📌'}
+                    </span>
+                    {saveSuccess ? '저장됨!' : '코스 저장'}
+                </button>
+            )}
+
+            {/* Browse Shared Courses Button */}
+            <button
+                onClick={() => setShowSharedCourses(true)}
+                style={{
+                    position: 'absolute',
+                    top: courseData.routePath.length > 0 && courseDescription ? '150px' : '100px',
+                    right: '16px',
+                    zIndex: 1600,
+                    height: '44px',
+                    borderRadius: '14px',
+                    background: 'rgba(20,20,20,0.7)',
+                    backdropFilter: 'blur(12px)',
+                    color: 'white',
+                    fontSize: '0.8rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '0 14px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+                    transition: 'all 0.3s ease'
+                }}
+            >
+                <span style={{ fontSize: '1rem' }}>🔥</span>
+                추천 코스
+            </button>
+
+
             {/* Map Component */}
             <FullMap
                 startPoint={courseData.startPoint}
@@ -278,6 +403,22 @@ const MainPage = ({ runMode = 'roundTrip', onBack }) => {
                 isReady={isReady}
                 startMode={startMode}
                 runMode={runMode}
+            />
+
+            {/* Save Course Modal */}
+            <SaveCourseModal
+                isOpen={showSaveModal}
+                onClose={() => setShowSaveModal(false)}
+                onSave={handleSaveCourse}
+                courseDescription={courseDescription}
+                isLoading={isSaving}
+            />
+
+            {/* Shared Courses Panel */}
+            <SharedCoursesPanel
+                isOpen={showSharedCourses}
+                onClose={() => setShowSharedCourses(false)}
+                onLoadCourse={handleLoadSharedCourse}
             />
 
             <style>
