@@ -43,3 +43,6 @@ auto_push.bat
 *-DESKTOP-*
 *-LAPTOP-*
 *.tmp
+
+
+docs/
