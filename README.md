@@ -35,7 +35,6 @@
 ## 📂 프로젝트 구조
 
 ```
-road-runner-app/
 ├── apps-script/         # Google Apps Script 백엔드 코드
 │   └── Code.gs
 ├── public/              # 정적 파일
@@ -80,7 +79,7 @@ road-runner-app/
 ```bash
 # 1. 레포지토리 클론
 git clone https://github.com/jaejoonglee97-cyber/running.git
-cd running/road-runner-app
+cd running
 
 # 2. 의존성 설치
 npm install
